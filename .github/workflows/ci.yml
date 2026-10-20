@@ -1,0 +1,30 @@
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: agent/requirements-dev.txt }
+      - run: pip install -r agent/requirements-dev.txt
+      - run: cd agent && ruff check . && ruff format --check .
+      - run: cd agent && pytest -q
+  chart:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: make chart-lint
+      - name: kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          helm template t charts/airgap-agent --set netpol.apiServerCIDR=10.0.0.1/32 | ./kubeconform -strict -summary -ignore-missing-schemas
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y shellcheck
+      - run: shellcheck -x scripts/*.sh
