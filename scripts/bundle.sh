@@ -5,6 +5,7 @@
 source "$(dirname "$0")/lib.sh"
 need docker helm sha256sum tar
 
+# gemma4 needs Ollama >= 0.22. Override with a pinned tag for reproducible bundles; the resolved digest is written to VERSION.
 OLLAMA_BASE="${OLLAMA_BASE:-ollama/ollama:latest}"
 QDRANT_IMAGE="${QDRANT_IMAGE:-qdrant/qdrant:v1.13.0}"
 AGENT_IMAGE="airgap/agent:${VERSION}"
@@ -40,6 +41,8 @@ cat >"$P/VERSION" <<V
 version=$VERSION
 gen_model=$GEN_MODEL
 embed_model=$EMBED_MODEL
+ollama_base=$OLLAMA_BASE
+ollama_digest=$(docker image inspect "$OLLAMA_BASE" --format '{{index .RepoDigests 0}}' 2>/dev/null || echo unknown)
 built=$(date -u +%FT%TZ)
 V
 

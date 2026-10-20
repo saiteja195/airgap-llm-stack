@@ -15,7 +15,7 @@
 4. `done` event reports tokens, tokens/sec, latency; the same numbers feed `/metrics`.
 
 ## Why models are baked into an image
-The cluster must never pull anything at runtime. `scripts/ollama-models.Dockerfile` runs `ollama pull` at build time on the connected machine, so shipping the bundle ships the weights, and the pod needs no PVC pre-seeding. Trade-off: a multi-GB image; swapping models means rebuilding that image (`GEN_MODEL=... make bundle`).
+The cluster must never pull anything at runtime. `scripts/ollama-models.Dockerfile` runs `ollama pull` at build time on the connected machine, so shipping the bundle ships the weights, and the pod needs no PVC pre-seeding. Trade-off: a multi-GB image (`gemma4:e2b` alone is ~7.2 GB, so budget ~8 GB for the bundle and node image storage); swapping models means rebuilding that image (`GEN_MODEL=... make bundle`).
 
 ## Network policy model
 Default-deny (ingress + egress) for the namespace, then explicit allows: clients -> DNS, clients -> qdrant:6333, clients -> ollama:11434, optional API-server egress (for the console's NetworkPolicy panel), and ingress to the agent from its namespace and the monitoring namespace. Qdrant and Ollama accept traffic only from pods labelled `airgap/role: client`.
