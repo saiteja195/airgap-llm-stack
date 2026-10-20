@@ -22,3 +22,14 @@ Default-deny (ingress + egress) for the namespace, then explicit allows: clients
 
 ## Preflight
 One implementation, two entry points: `python -m app.preflight --cluster` (operator shell, stdlib + kubectl only) and `GET /api/preflight` (in-pod runtime checks, rendered in the console). Every non-passing check carries a remediation hint.
+
+## Query gate (optional, off by default)
+After retrieval and before generation, `app/gate.py` classifies the question as `in_scope`, `out_of_scope` or `injection`. Blocked questions get a canned refusal and never reach the generator, which saves the latency and tokens and keeps prompt-injection attempts away from the model. A `gate` event streams to the console with verdict, confidence, mode and cost.
+
+| `agent.gate.mode` | How it decides | Notes |
+|---|---|---|
+| `off` | no gate | default |
+| `similarity` | best retrieval score >= `minScore`; regex catches obvious injection phrasing | no extra model; tune `minScore` on real embeddings |
+| `model` | asks `agent.gate.model` (via Ollama, JSON output) for a label and confidence | model must be in the bundle: `GATE_MODEL=<tag> make bundle`; fails open (answers) if the classifier errors, and reports the error |
+
+`airgap_gate_verdicts_total{verdict=...}` is exported for dashboards. A dedicated Jev-style decision model is the intended `model`-mode backend once its input/output format is verified (issue #3).

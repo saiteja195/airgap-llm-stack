@@ -50,6 +50,9 @@ spec:
             - { name: GEN_MODEL, value: {{ .Values.model.generation | quote }} }
             - { name: EMBED_MODEL, value: {{ .Values.model.embedding | quote }} }
             - { name: TOP_K, value: {{ .Values.agent.topK | quote }} }
+            - { name: GATE_MODE, value: {{ .Values.agent.gate.mode | quote }} }
+            - { name: GATE_MODEL, value: {{ .Values.agent.gate.model | quote }} }
+            - { name: GATE_MIN_SCORE, value: {{ .Values.agent.gate.minScore | quote }} }
             - { name: INSTALL_STEPS, value: {{ .Values.agent.installSteps | quote }} }
             - { name: POD_NAMESPACE, valueFrom: { fieldRef: { fieldPath: metadata.namespace } } }
             - name: AGENT_API_KEY

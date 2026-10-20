@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 class Metrics:
     requests_total: int = 0
     errors_total: int = 0
+    gate_total: dict = field(default_factory=dict)  # verdict -> count
     tokens_total: int = 0
     last_tokens_per_s: float = 0.0
     last_latency_s: float = 0.0
@@ -23,6 +24,10 @@ class Metrics:
             self.last_latency_s = total_seconds
             if self.cold_start_s is None:
                 self.cold_start_s = since_start
+
+    def record_gate(self, verdict: str):
+        with self._lock:
+            self.gate_total[verdict] = self.gate_total.get(verdict, 0) + 1
 
     def record_error(self):
         with self._lock:
@@ -53,6 +58,9 @@ class Metrics:
         out = []
         for name, kind, val in lines:
             out += [f"# TYPE {name} {kind}", f"{name} {val}"]
+        out.append("# TYPE airgap_gate_verdicts_total counter")
+        for verdict, n in sorted(self.gate_total.items()):
+            out.append(f'airgap_gate_verdicts_total{{verdict="{verdict}"}} {n}')
         return "\n".join(out) + "\n"
 
 

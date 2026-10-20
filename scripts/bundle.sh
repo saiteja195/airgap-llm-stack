@@ -18,7 +18,7 @@ docker build -f "$ROOT/agent/Dockerfile" -t "$AGENT_IMAGE" "$ROOT"
 
 log "building model image ($GEN_MODEL + $EMBED_MODEL baked in) - this downloads the weights"
 docker build -f "$ROOT/scripts/ollama-models.Dockerfile" \
-  --build-arg OLLAMA_IMAGE="$OLLAMA_BASE" --build-arg GEN_MODEL="$GEN_MODEL" --build-arg EMBED_MODEL="$EMBED_MODEL" \
+  --build-arg OLLAMA_IMAGE="$OLLAMA_BASE" --build-arg GEN_MODEL="$GEN_MODEL" --build-arg EMBED_MODEL="$EMBED_MODEL" --build-arg GATE_MODEL="${GATE_MODEL:-}" \
   -t "$MODELS_IMAGE" "$ROOT/scripts"
 
 log "pulling $QDRANT_IMAGE"
@@ -40,6 +40,7 @@ cat >"$P/VERSION" <<V
 version=$VERSION
 gen_model=$GEN_MODEL
 embed_model=$EMBED_MODEL
+gate_model=${GATE_MODEL:-none}
 built=$(date -u +%FT%TZ)
 V
 

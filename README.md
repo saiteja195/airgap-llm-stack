@@ -53,6 +53,7 @@ Numbers will be recorded in [docs/benchmarks.md](docs/benchmarks.md) with hardwa
 | bundle / load / demo scripts | written, syntax-checked; **not yet run end to end** |
 | Model tag (`gemma4:e2b`) | placeholder - confirm the exact Ollama tag and CPU speed |
 | CNI NetworkPolicy enforcement on kind | unverified; the demo also blocks egress at the node level |
-| Jev decision-model gate | planned, optional |
+| Query gate (`agent.gate.mode`: off / similarity / model) | implemented and unit-tested against mocks; default **off**; the similarity threshold (0.45) is untuned on real embeddings |
+| Jev decision model as the gate | not vetted; any Ollama-served classifier can be set as `agent.gate.model`, a Jev-style one needs its I/O format checked first (#3) |
 
 See [docs/architecture.md](docs/architecture.md) and [docs/threat-model.md](docs/threat-model.md).
