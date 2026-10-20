@@ -22,3 +22,39 @@ data:
   airgap.json: |-
 {{ .Files.Get "files/grafana-dashboard.json" | indent 4 }}
 {{- end }}
+{{- if .Values.monitoring.prometheusRule.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ .Release.Name }}-agent
+  labels: {{- include "airgap.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: airgap-agent
+      rules:
+        - alert: AirgapAgentMetricsMissing
+          expr: absent(airgap_requests_total)
+          for: 5m
+          labels: { severity: critical }
+          annotations:
+            summary: Agent metrics are missing - the agent is down or not being scraped.
+        - alert: AirgapAgentErrors
+          expr: increase(airgap_errors_total[10m]) > 0
+          for: 5m
+          labels: { severity: warning }
+          annotations:
+            summary: Agent requests are failing (check the Qdrant and Ollama pods).
+        - alert: AirgapSlowGeneration
+          expr: airgap_tokens_per_second > 0 and airgap_tokens_per_second < {{ .Values.monitoring.prometheusRule.minTokensPerSecond }}
+          for: 10m
+          labels: { severity: warning }
+          annotations:
+            summary: Local model is generating below {{ .Values.monitoring.prometheusRule.minTokensPerSecond }} tokens/sec.
+        - alert: AirgapHighLatency
+          expr: airgap_last_request_latency_seconds > {{ .Values.monitoring.prometheusRule.maxLatencySeconds }}
+          for: 10m
+          labels: { severity: warning }
+          annotations:
+            summary: Answers are taking longer than {{ .Values.monitoring.prometheusRule.maxLatencySeconds }}s.
+{{- end }}

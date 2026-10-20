@@ -11,7 +11,7 @@ Agent API + vector DB + local model server, shipped as a Helm chart with an offl
 | Local model | [Ollama](https://ollama.com) serving Gemma 4 E2B (CPU-friendly), weights baked into the image |
 | Vector DB | Qdrant |
 | Isolation | default-deny NetworkPolicies, node-level egress block in the demo, non-root + read-only rootfs, generated API key |
-| Observability | `/metrics` (Prometheus), ServiceMonitor, Grafana dashboard ConfigMap |
+| Observability | `/metrics` (Prometheus), ServiceMonitor, Grafana dashboard ConfigMap, optional PrometheusRule alerts |
 
 ## Quickstart
 

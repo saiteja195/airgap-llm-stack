@@ -44,3 +44,7 @@ netpol:
 monitoring:
   serviceMonitor: { enabled: false }   # needs the Prometheus Operator CRDs
   grafanaDashboard: { enabled: false } # ConfigMap picked up by the Grafana sidecar
+  prometheusRule:                      # needs the Prometheus Operator CRDs
+    enabled: false
+    minTokensPerSecond: 2              # alert when the last answer generated slower than this
+    maxLatencySeconds: 120
