@@ -28,6 +28,8 @@ make bench          # tokens/sec + latency against the running stack
 make down
 ```
 
+Full local test guide (three levels, from no-Docker to the real air-gap demo): [docs/testing.md](docs/testing.md).
+
 ## What a customer does (3 steps)
 
 1. `make preflight` - fix every FAIL.
