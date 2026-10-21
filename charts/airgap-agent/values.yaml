@@ -12,6 +12,10 @@ model:
 
 agent:
   topK: 4
+  gate:
+    mode: "off"          # off | similarity | model  (see docs/architecture.md)
+    model: ""            # classifier model for mode=model; must be in the bundle (GATE_MODEL=... make bundle)
+    minScore: 0.45       # similarity mode: below this best-retrieval score the question is out of scope
   installSteps: 3              # surfaced in the UI metrics strip
   resources:
     requests: { cpu: 100m, memory: 128Mi }

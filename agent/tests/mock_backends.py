@@ -38,6 +38,9 @@ async def embed(req: Request):
 async def chat(req: Request):
     body = await req.json()
     ctx = body["messages"][-1]["content"]
+    if body.get("format") == "json":  # gate classifier call
+        label = "out_of_scope" if "capital of" in ctx.lower() else "in_scope"
+        return {"message": {"content": json.dumps({"label": label, "confidence": 0.9})}}
     first = re.search(r"\[1\][^\n]*\n(.+)", ctx)
     text = (first.group(1) if first else "I don't know.")[:160] + " [1]"
 

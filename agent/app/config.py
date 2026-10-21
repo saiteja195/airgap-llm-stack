@@ -20,3 +20,11 @@ EGRESS_PROBES = [
     for p in os.getenv("EGRESS_PROBES", "1.1.1.1:443,8.8.8.8:53,example.com:443").split(",")
     if p.strip()
 ]
+
+# Query gate: classify a question before spending tokens on generation.
+#   off         - disabled (default)
+#   similarity  - out_of_scope when the best retrieval score < GATE_MIN_SCORE; regex catches obvious injection
+#   model       - ask GATE_MODEL (any small instruct/decision model served by Ollama) for a label + confidence
+GATE_MODE = os.getenv("GATE_MODE", "off")
+GATE_MODEL = os.getenv("GATE_MODEL", "")
+GATE_MIN_SCORE = float(os.getenv("GATE_MIN_SCORE", "0.45"))

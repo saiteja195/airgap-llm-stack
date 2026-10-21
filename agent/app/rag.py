@@ -9,7 +9,7 @@ from pathlib import Path
 
 import httpx
 
-from . import config
+from . import config, gate
 from .metrics import METRICS
 
 SYSTEM_PROMPT = (
@@ -103,6 +103,22 @@ async def answer_stream(question: str) -> AsyncIterator[dict]:
         try:
             hits = await retrieve(client, question)
             yield {"type": "citations", "citations": hits}
+            verdict = await gate.evaluate(client, question, hits)
+            if verdict:
+                METRICS.record_gate(verdict["verdict"])
+                yield {"type": "gate", **verdict}
+                if verdict["verdict"] != gate.IN_SCOPE:
+                    total = time.perf_counter() - t0
+                    METRICS.record_answer(0, 0.0, total, time.time() - config.PROCESS_START)
+                    yield {"type": "token", "text": gate.REFUSALS[verdict["verdict"]]}
+                    yield {
+                        "type": "done",
+                        "tokens": 0,
+                        "tokens_per_s": 0,
+                        "latency_s": round(total, 3),
+                        "gated": True,
+                    }
+                    return
             payload = {
                 "model": config.GEN_MODEL,
                 "messages": build_messages(question, hits),

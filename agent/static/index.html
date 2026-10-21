@@ -174,7 +174,7 @@ async function ask(question) {
   try {
     const r = await api("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question }) });
     const reader = r.body.getReader(), dec = new TextDecoder();
-    let buf = "";
+    let buf = "", gate = "";
     for (;;) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -188,8 +188,11 @@ async function ask(question) {
           meta.textContent = "generating…";
           cites.innerHTML = ev.citations.map((c) =>
             `<details class="cite"><summary>[${c.n}] ${esc(c.source)} · score ${c.score.toFixed(2)}</summary><pre>${esc(c.text)}</pre></details>`).join("");
+        } else if (ev.type === "gate") {
+          gate = ` · gate: ${ev.verdict} (${ev.confidence}, ${ev.mode}, ${ev.ms} ms)${ev.error ? " [classifier error — failed open]" : ""}`;
+          meta.textContent = "gate: " + ev.verdict + "…";
         } else if (ev.type === "token") { a.textContent += ev.text; }
-        else if (ev.type === "done") { meta.textContent = `${ev.tokens} tokens · ${ev.tokens_per_s} tok/s · ${ev.latency_s}s`; }
+        else if (ev.type === "done") { meta.textContent = (ev.gated ? "blocked before generation · " : `${ev.tokens} tokens · ${ev.tokens_per_s} tok/s · `) + `${ev.latency_s}s` + gate; }
         else if (ev.type === "error") { meta.textContent = "error: " + ev.message; }
         log.scrollTop = log.scrollHeight;
       }
@@ -205,7 +208,7 @@ $("savekey").addEventListener("click", () => {
   apiKey = $("key").value; try { sessionStorage.setItem("apikey", apiKey); } catch (e) {}
   $("auth").style.display = "none"; loadMeta(); runPreflight(); runAirgap();
 });
-for (const s of ["How do I run the preflight checker?", "What does the default-deny egress policy allow?", "How do I load the offline bundle?"]) {
+for (const s of ["How do I run the preflight checker?", "What does the default-deny egress policy allow?", "How do I load the offline bundle?", "What is the capital of France?"]) {
   const b = document.createElement("button"); b.className = "ghost"; b.type = "button"; b.textContent = s;
   b.onclick = () => ask(s); $("chips").appendChild(b);
 }

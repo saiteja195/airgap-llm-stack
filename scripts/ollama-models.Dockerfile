@@ -4,8 +4,10 @@ ARG OLLAMA_IMAGE=ollama/ollama:latest
 FROM ${OLLAMA_IMAGE}
 ARG GEN_MODEL
 ARG EMBED_MODEL
+ARG GATE_MODEL=""
 ENV OLLAMA_MODELS=/models
 RUN ollama serve & \
     for i in $(seq 1 30); do ollama list >/dev/null 2>&1 && break; sleep 1; done; \
     ollama pull "${GEN_MODEL}" && ollama pull "${EMBED_MODEL}" && \
+    { [ -z "${GATE_MODEL}" ] || ollama pull "${GATE_MODEL}"; } && \
     chmod -R a+rX /models && kill %1 || true
