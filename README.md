@@ -51,7 +51,7 @@ Numbers will be recorded in [docs/benchmarks.md](docs/benchmarks.md) with hardwa
 | Agent API, console UI, tests | working; tested against mock Ollama/Qdrant |
 | Helm chart | `helm lint` + `helm template` clean; **not yet installed on a real cluster** |
 | bundle / load / demo scripts | written, syntax-checked; **not yet run end to end** |
-| Model tag (`gemma4:e2b`) | placeholder - confirm the exact Ollama tag and CPU speed |
+| Model tag (`gemma4:e2b`) | tag confirmed via Google's Ollama docs (~7.2 GB download, needs Ollama >= 0.22); CPU speed not yet measured |
 | CNI NetworkPolicy enforcement on kind | unverified; the demo also blocks egress at the node level |
 | Jev decision-model gate | planned, optional |
 

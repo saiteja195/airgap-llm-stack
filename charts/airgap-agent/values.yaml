@@ -7,7 +7,7 @@ image:
   qdrant: { repository: qdrant/qdrant, tag: "v1.13.0" }
 
 model:
-  generation: gemma4:e2b       # keep in sync with scripts/bundle.sh
+  generation: gemma4:e2b       # ~7.2 GB download, needs Ollama >= 0.22; keep in sync with scripts/lib.sh
   embedding: nomic-embed-text
 
 agent:
