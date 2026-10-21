@@ -1,0 +1,6 @@
+apiVersion: v2
+name: airgap-agent
+description: LLM agent API + Qdrant + Ollama for clusters with no outbound internet
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

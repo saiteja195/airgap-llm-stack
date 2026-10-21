@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-ollama
+  labels: {{- include "airgap.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: {{- include "airgap.selector" (dict "ctx" $ "c" "ollama") | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "airgap.selector" (dict "ctx" $ "c" "ollama") | nindent 8 }}
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: ollama
+          image: {{ include "airgap.image" .Values.image.ollama }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports: [{ name: http, containerPort: 11434 }]
+          env:
+            - { name: OLLAMA_MODELS, value: /models }   # baked into the image
+            - { name: OLLAMA_HOST, value: "0.0.0.0:11434" }
+            - { name: HOME, value: /tmp }
+            - { name: OLLAMA_KEEP_ALIVE, value: "-1" }  # keep the model resident
+          readinessProbe: { httpGet: { path: /api/tags, port: http }, periodSeconds: 5 }
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+          resources: {{- toYaml .Values.ollama.resources | nindent 12 }}
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: {} }]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-ollama
+  labels: {{- include "airgap.labels" . | nindent 4 }}
+spec:
+  selector: {{- include "airgap.selector" (dict "ctx" $ "c" "ollama") | nindent 4 }}
+  ports: [{ name: http, port: 11434, targetPort: http }]

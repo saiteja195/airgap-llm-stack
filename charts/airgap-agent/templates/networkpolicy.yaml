@@ -1,0 +1,74 @@
+{{- if .Values.netpol.enabled }}
+# 1. Deny everything by default, in both directions.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-default-deny
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+# 2. Clients (agent, ingest) may resolve names via cluster DNS only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-allow-dns
+spec:
+  podSelector: { matchLabels: { airgap/role: client } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
+          podSelector: { matchLabels: { k8s-app: kube-dns } }
+      ports: [{ port: 53, protocol: UDP }, { port: 53, protocol: TCP }]
+---
+# 3. Clients may talk to Qdrant and Ollama, nothing else.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-client-egress
+spec:
+  podSelector: { matchLabels: { airgap/role: client } }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: {{- include "airgap.selector" (dict "ctx" $ "c" "qdrant") | nindent 14 }}
+      ports: [{ port: 6333, protocol: TCP }]
+    - to:
+        - podSelector:
+            matchLabels: {{- include "airgap.selector" (dict "ctx" $ "c" "ollama") | nindent 14 }}
+      ports: [{ port: 11434, protocol: TCP }]
+{{- if .Values.netpol.apiServerCIDR }}
+    - to: [{ ipBlock: { cidr: {{ .Values.netpol.apiServerCIDR }} } }]
+      ports: [{ port: 443, protocol: TCP }, { port: 6443, protocol: TCP }]
+{{- end }}
+---
+# 4. Only clients may reach Qdrant and Ollama.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-backends-ingress
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/component, operator: In, values: [qdrant, ollama] }
+  policyTypes: [Ingress]
+  ingress:
+    - from: [{ podSelector: { matchLabels: { airgap/role: client } } }]
+---
+# 5. The agent accepts traffic from its own namespace and from Prometheus.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-agent-ingress
+spec:
+  podSelector:
+    matchLabels: {{- include "airgap.selector" (dict "ctx" $ "c" "agent") | nindent 6 }}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {}
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ .Values.netpol.monitoringNamespace }} } }
+      ports: [{ port: 8080, protocol: TCP }]
+{{- end }}

@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Air-Gap Console</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #fff; --text: #1a1d23; --muted: #626b7a; --border: #dde1e8;
+    --accent: #2457d6; --pass: #1a7f45; --warn: #a15c00; --fail: #c0302b;
+    --pass-bg: #e3f4ea; --warn-bg: #fdf0d9; --fail-bg: #fbe5e3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101319; --surface: #181c24; --text: #e8eaee; --muted: #9099a8; --border: #2a303b;
+      --accent: #6c93f5; --pass: #4fc986; --warn: #e5a73e; --fail: #f2766f;
+      --pass-bg: #14301f; --warn-bg: #36280d; --fail-bg: #3a1a18;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101319; --surface: #181c24; --text: #e8eaee; --muted: #9099a8; --border: #2a303b;
+    --accent: #6c93f5; --pass: #4fc986; --warn: #e5a73e; --fail: #f2766f;
+    --pass-bg: #14301f; --warn-bg: #36280d; --fail-bg: #3a1a18;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center;
+    padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  h1 { font-size: 17px; margin: 0; }
+  h1 small { color: var(--muted); font-weight: 400; margin-left: 8px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-left: auto; }
+  .stat { display: flex; flex-direction: column; }
+  .stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 12px; color: var(--muted); }
+  main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; padding: 16px;
+    max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  section h2 { font-size: 14px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  #log { min-height: 260px; max-height: 56vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+  .q { align-self: flex-end; background: var(--accent); color: #fff; padding: 8px 12px; border-radius: 12px 12px 2px 12px; max-width: 85%; }
+  .a { white-space: pre-wrap; }
+  .meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  details.cite { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin-top: 6px; font-size: 13px; }
+  details.cite summary { cursor: pointer; color: var(--muted); }
+  details.cite pre { white-space: pre-wrap; margin: 8px 0 0; font: 12px/1.5 ui-monospace, monospace; }
+  form { display: flex; gap: 8px; margin-top: 12px; }
+  input[type=text], input[type=password] { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
+  button { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent);
+    color: #fff; font: inherit; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--accent); }
+  button:disabled { opacity: .55; cursor: default; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chips button { font-size: 12px; padding: 4px 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 6px 4px; border-top: 1px solid var(--border); vertical-align: top; }
+  .badge { display: inline-block; min-width: 42px; text-align: center; font-size: 11px; font-weight: 700;
+    padding: 2px 6px; border-radius: 6px; }
+  .pass { color: var(--pass); background: var(--pass-bg); }
+  .warn { color: var(--warn); background: var(--warn-bg); }
+  .fail { color: var(--fail); background: var(--fail-bg); }
+  .fix { color: var(--muted); font-size: 12px; }
+  .verdict { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); }
+  .dot.pass { background: var(--pass); } .dot.fail { background: var(--fail); }
+  .empty { color: var(--muted); }
+  #auth { display: none; gap: 8px; padding: 8px 16px; background: var(--warn-bg); }
+</style>
+</head>
+<body>
+<div id="auth"><span>API key required:</span><input type="password" id="key" aria-label="API key" placeholder="X-API-Key"><button id="savekey">Save</button></div>
+<header>
+  <h1>Air-Gap Console<small id="model"></small></h1>
+  <div class="stats" aria-live="polite">
+    <div class="stat"><b id="s-cold">—</b><span>cold start to 1st answer</span></div>
+    <div class="stat"><b id="s-tps">—</b><span>tokens / sec</span></div>
+    <div class="stat"><b id="s-lat">—</b><span>last answer latency</span></div>
+    <div class="stat"><b id="s-steps">—</b><span>install steps</span></div>
+  </div>
+</header>
+<main>
+  <div class="col">
+    <section aria-labelledby="chat-h">
+      <h2 id="chat-h">Ask your local docs</h2>
+      <div id="log"><div class="empty">Answers come from a model running inside this cluster, grounded in the indexed docs. Nothing leaves the network.</div></div>
+      <form id="ask"><input type="text" id="q" aria-label="Question" placeholder="e.g. How do I run the preflight checker?" autocomplete="off" required><button id="send">Ask</button></form>
+      <div class="chips" id="chips"></div>
+    </section>
+  </div>
+  <div class="col">
+    <section aria-labelledby="pf-h">
+      <h2 id="pf-h">Preflight</h2>
+      <button class="ghost" id="runpf">Run checks</button>
+      <table id="pf"><tbody></tbody></table>
+    </section>
+    <section aria-labelledby="ag-h">
+      <h2 id="ag-h">Air-gap proof</h2>
+      <div class="verdict"><span class="dot" id="agdot"></span><span id="agtxt">Not checked</span></div>
+      <table id="probes"><tbody></tbody></table>
+      <h2 style="margin-top:14px">NetworkPolicies</h2>
+      <table id="np"><tbody></tbody></table>
+      <button class="ghost" id="runag" style="margin-top:10px">Re-probe</button>
+    </section>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let apiKey = "";
+try { apiKey = sessionStorage.getItem("apikey") || ""; } catch (e) {}
+
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), "X-API-Key": apiKey } });
+  if (r.status === 401) { $("auth").style.display = "flex"; throw new Error("unauthorized"); }
+  return r;
+}
+
+async function loadMeta() {
+  try {
+    const m = await (await api("/api/meta")).json();
+    $("model").textContent = m.model;
+    $("s-cold").textContent = m.cold_start_s == null ? "—" : m.cold_start_s + " s";
+    $("s-tps").textContent = m.tokens_per_s ? m.tokens_per_s : "—";
+    $("s-lat").textContent = m.last_latency_s ? m.last_latency_s + " s" : "—";
+    $("s-steps").textContent = m.install_steps;
+  } catch (e) {}
+}
+
+function row(cells) { return "<tr>" + cells.map((c) => `<td>${c}</td>`).join("") + "</tr>"; }
+
+async function runPreflight() {
+  $("runpf").disabled = true;
+  try {
+    const res = await (await api("/api/preflight")).json();
+    $("pf").tBodies[0].innerHTML = res.map((r) =>
+      row([`<span class="badge ${r.status}">${r.status.toUpperCase()}</span>`,
+        `<div>${esc(r.name)}</div><div class="fix">${esc(r.detail)}${r.status !== "pass" && r.fix ? " — " + esc(r.fix) : ""}</div>`])).join("");
+  } catch (e) {} finally { $("runpf").disabled = false; }
+}
+
+async function runAirgap() {
+  $("runag").disabled = true; $("agtxt").textContent = "Probing…";
+  try {
+    const d = await (await api("/api/airgap")).json();
+    const ok = d.egress.airgapped;
+    $("agdot").className = "dot " + (ok ? "pass" : "fail");
+    $("agtxt").textContent = ok ? "Egress blocked — no outbound internet" : "LEAK: outbound traffic is possible";
+    $("probes").tBodies[0].innerHTML = d.egress.probes.map((p) =>
+      row([`<code>${esc(p.target)}</code>`,
+        `<span class="badge ${p.reachable ? "fail" : "pass"}">${p.reachable ? "REACHED" : "BLOCKED"}</span>`,
+        `<span class="fix">${esc(p.reason || p.ms + " ms")}</span>`])).join("");
+    const np = d.network_policies;
+    $("np").tBodies[0].innerHTML = np.available
+      ? (np.policies.map((p) => row([`<code>${esc(p.name)}</code>`, esc(p.types.join("+")), `<span class="fix">${p.egress_rules} egress rule(s)</span>`])).join("") || row(["<span class='fix'>none found</span>"]))
+      : row([`<span class="fix">${esc(np.reason)}</span>`]);
+  } catch (e) {} finally { $("runag").disabled = false; }
+}
+
+async function ask(question) {
+  const log = $("log");
+  if (log.querySelector(".empty")) log.innerHTML = "";
+  log.insertAdjacentHTML("beforeend", `<div class="q">${esc(question)}</div>`);
+  const box = document.createElement("div");
+  box.innerHTML = `<div class="a"></div><div class="cites"></div><div class="meta">retrieving…</div>`;
+  log.appendChild(box);
+  const a = box.querySelector(".a"), cites = box.querySelector(".cites"), meta = box.querySelector(".meta");
+  $("send").disabled = true;
+  try {
+    const r = await api("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question }) });
+    const reader = r.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i); buf = buf.slice(i + 1);
+        if (!line) continue;
+        const ev = JSON.parse(line);
+        if (ev.type === "citations") {
+          meta.textContent = "generating…";
+          cites.innerHTML = ev.citations.map((c) =>
+            `<details class="cite"><summary>[${c.n}] ${esc(c.source)} · score ${c.score.toFixed(2)}</summary><pre>${esc(c.text)}</pre></details>`).join("");
+        } else if (ev.type === "token") { a.textContent += ev.text; }
+        else if (ev.type === "done") { meta.textContent = `${ev.tokens} tokens · ${ev.tokens_per_s} tok/s · ${ev.latency_s}s`; }
+        else if (ev.type === "error") { meta.textContent = "error: " + ev.message; }
+        log.scrollTop = log.scrollHeight;
+      }
+    }
+  } catch (e) { meta.textContent = "request failed: " + e.message; }
+  finally { $("send").disabled = false; loadMeta(); }
+}
+
+$("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.trim(); if (q) { $("q").value = ""; ask(q); } });
+$("runpf").addEventListener("click", runPreflight);
+$("runag").addEventListener("click", runAirgap);
+$("savekey").addEventListener("click", () => {
+  apiKey = $("key").value; try { sessionStorage.setItem("apikey", apiKey); } catch (e) {}
+  $("auth").style.display = "none"; loadMeta(); runPreflight(); runAirgap();
+});
+for (const s of ["How do I run the preflight checker?", "What does the default-deny egress policy allow?", "How do I load the offline bundle?"]) {
+  const b = document.createElement("button"); b.className = "ghost"; b.type = "button"; b.textContent = s;
+  b.onclick = () => ask(s); $("chips").appendChild(b);
+}
+loadMeta(); runPreflight(); runAirgap();
+</script>
+</body>
+</html>

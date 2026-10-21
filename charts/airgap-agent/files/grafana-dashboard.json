@@ -1,0 +1,20 @@
+{
+  "title": "Air-Gap LLM Stack",
+  "uid": "airgap-llm",
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    { "id": 1, "type": "stat", "title": "Tokens / sec (last answer)", "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [{ "expr": "airgap_tokens_per_second", "refId": "A" }] },
+    { "id": 2, "type": "stat", "title": "Cold start to first answer (s)", "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "targets": [{ "expr": "airgap_cold_start_seconds", "refId": "A" }] },
+    { "id": 3, "type": "timeseries", "title": "Answer latency (s)", "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "targets": [{ "expr": "airgap_last_request_latency_seconds", "refId": "A" }] },
+    { "id": 4, "type": "timeseries", "title": "Requests / errors", "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [{ "expr": "rate(airgap_requests_total[5m])", "legendFormat": "requests/s", "refId": "A" },
+                  { "expr": "rate(airgap_errors_total[5m])", "legendFormat": "errors/s", "refId": "B" }] },
+    { "id": 5, "type": "timeseries", "title": "Generated tokens / s", "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [{ "expr": "rate(airgap_generated_tokens_total[1m])", "refId": "A" }] }
+  ]
+}

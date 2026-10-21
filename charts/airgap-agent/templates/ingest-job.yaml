@@ -1,0 +1,34 @@
+{{- if .Values.ingest.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-ingest-{{ .Release.Revision }}
+  labels: {{- include "airgap.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 20          # the model server may still be starting
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        {{- include "airgap.selector" (dict "ctx" $ "c" "ingest") | nindent 8 }}
+        airgap/role: client
+    spec:
+      restartPolicy: OnFailure
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: ingest
+          image: {{ include "airgap.image" .Values.image.agent }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["python", "-m", "app.ingest", "/corpus"]
+          env:
+            - { name: OLLAMA_URL, value: "http://{{ .Release.Name }}-ollama:11434" }
+            - { name: QDRANT_URL, value: "http://{{ .Release.Name }}-qdrant:6333" }
+            - { name: EMBED_MODEL, value: {{ .Values.model.embedding | quote }} }
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          {{- if .Values.ingest.corpusConfigMap }}
+          volumeMounts: [{ name: corpus, mountPath: /corpus }]
+          {{- end }}
+      {{- if .Values.ingest.corpusConfigMap }}
+      volumes: [{ name: corpus, configMap: { name: {{ .Values.ingest.corpusConfigMap }} } }]
+      {{- end }}
+{{- end }}

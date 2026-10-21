@@ -1,0 +1,24 @@
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Release.Name }}-agent
+  labels: {{- include "airgap.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels: {{- include "airgap.labels" . | nindent 6 }}
+  endpoints: [{ port: http, path: /metrics, interval: 15s }]
+{{- end }}
+{{- if .Values.monitoring.grafanaDashboard.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-dashboard
+  labels:
+    grafana_dashboard: "1"
+    {{- include "airgap.labels" . | nindent 4 }}
+data:
+  airgap.json: |-
+{{ .Files.Get "files/grafana-dashboard.json" | indent 4 }}
+{{- end }}

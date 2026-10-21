@@ -1,0 +1,46 @@
+# All images must be present on every node (kind load / local registry) -- nothing is pulled from the internet.
+image:
+  pullPolicy: IfNotPresent
+  agent: { repository: airgap/agent, tag: "0.1.0" }
+  # Ollama image with weights baked in by scripts/bundle.sh
+  ollama: { repository: airgap/ollama-models, tag: "0.1.0" }
+  qdrant: { repository: qdrant/qdrant, tag: "v1.13.0" }
+
+model:
+  generation: gemma4:e2b       # keep in sync with scripts/bundle.sh
+  embedding: nomic-embed-text
+
+agent:
+  topK: 4
+  installSteps: 3              # surfaced in the UI metrics strip
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { memory: 512Mi }
+
+ollama:
+  resources:
+    requests: { cpu: "2", memory: 6Gi }
+    limits: { memory: 10Gi }
+
+qdrant:
+  persistence: { size: 2Gi, storageClass: "" }
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 1Gi }
+
+ingest:
+  enabled: true
+  corpusConfigMap: ""          # optional: ConfigMap with .md files to index instead of the baked-in demo corpus
+
+secret:
+  existingSecret: ""           # use your own Secret with key "api-key"; otherwise one is generated once and kept across upgrades
+
+netpol:
+  enabled: true
+  # CIDR of the Kubernetes API server (lets the console list NetworkPolicies). Empty = no API egress.
+  apiServerCIDR: ""
+  monitoringNamespace: monitoring
+
+monitoring:
+  serviceMonitor: { enabled: false }   # needs the Prometheus Operator CRDs
+  grafanaDashboard: { enabled: false } # ConfigMap picked up by the Grafana sidecar
