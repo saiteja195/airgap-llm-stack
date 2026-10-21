@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 PY ?= python3
-.PHONY: help dev test lint chart-lint chart-template bundle preflight airgap-demo bench down
+.PHONY: help dev test chart-test lint chart-lint chart-template bundle preflight airgap-demo bench down
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-14s %s\n", $$1, $$2}'
@@ -10,6 +10,9 @@ dev: ## run the UI against mock Ollama/Qdrant at http://localhost:8080 (no clust
 
 test: ## unit tests
 	cd agent && $(PY) -m pytest -q
+
+chart-test: ## rendered-chart invariants (needs helm)
+	cd agent && $(PY) -m pytest -q ../charts/tests
 
 lint: chart-lint ## ruff + helm lint + shell syntax
 	cd agent && ruff check . && ruff format --check .
