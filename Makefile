@@ -17,7 +17,7 @@ lint: chart-lint ## ruff + helm lint + shell syntax
 
 chart-lint: ## helm lint + render with every optional feature on
 	helm lint charts/airgap-agent
-	helm template t charts/airgap-agent --set monitoring.serviceMonitor.enabled=true --set monitoring.grafanaDashboard.enabled=true --set netpol.apiServerCIDR=10.0.0.1/32 >/dev/null
+	helm template t charts/airgap-agent --set monitoring.serviceMonitor.enabled=true --set monitoring.grafanaDashboard.enabled=true --set monitoring.prometheusRule.enabled=true --set netpol.apiServerCIDR=10.0.0.1/32 >/dev/null
 
 bundle: ## (connected machine) build bundle/airgap-bundle.tar
 	scripts/bundle.sh
