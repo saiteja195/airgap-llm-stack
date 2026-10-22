@@ -29,7 +29,7 @@ make test lint     # agent tests, ruff, helm lint (needs helm), shell syntax
 make dev           # console at http://localhost:8080 against mock Ollama/Qdrant
 ```
 
-Expect in the console:
+Expect in the console (the three cards at the top summarise it: **Isolated**, **Ready**, **Healthy** should all show a green tick; a red or amber card tells you which check to open):
 - Ask "How do I run the preflight checker?": a streamed answer with expandable citations from `runbook.md`.
 - Preflight panel: all PASS.
 - Air-gap panel: BLOCKED for every probe (dev mode probes closed localhost ports, so this is a plumbing check, not proof of isolation).

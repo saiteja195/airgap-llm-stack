@@ -130,3 +130,36 @@ def test_model_gate_fails_open_and_reports_error(ingested, monkeypatch):
 
     res = asyncio.run(run())
     assert res["verdict"] == "in_scope" and "error" in res
+
+
+# --- console UI guards -------------------------------------------------------------------------
+
+UI = Path(__file__).resolve().parents[1] / "static" / "index.html"
+
+
+def test_ui_has_no_external_assets():
+    """The console must work with no internet: no remote scripts, styles, fonts, images or CSS url()s."""
+    import re
+
+    html = UI.read_text(encoding="utf-8")
+    refs = re.findall(r"""(?:src|href|action)\s*=\s*["']([^"']+)["']""", html) + re.findall(
+        r"url\(([^)]+)\)", html
+    )
+    remote = [r for r in refs if re.match(r"^\s*(https?:)?//", r.strip("\"' "))]
+    assert not remote, f"external references found: {remote}"
+
+
+def test_ui_explains_itself_to_new_users():
+    html = UI.read_text(encoding="utf-8")
+    for heading in ("Readiness checks", "Isolation proof", "Ask your documents", "What is this?"):
+        assert heading in html
+    for check_id in ("egress-blocked", "ollama", "model-generation", "model-embedding", "vector-db"):
+        assert f'"{check_id}"' in html  # every server-side check id has a friendly label
+
+
+def test_every_preflight_id_has_a_friendly_label(ingested, monkeypatch):
+    monkeypatch.setattr(config, "EGRESS_PROBES", ["127.0.0.1:1"])
+    html = UI.read_text(encoding="utf-8")
+    ids = [r["id"] for r in asyncio.run(runtime_checks())]
+    missing = [i for i in ids if f'"{i}"' not in html]
+    assert not missing, f"preflight ids without UI labels: {missing}"

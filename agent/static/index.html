@@ -7,174 +7,358 @@
 <title>Air-Gap Console</title>
 <style>
   :root {
-    --bg: #f6f7f9; --surface: #fff; --text: #1a1d23; --muted: #626b7a; --border: #dde1e8;
-    --accent: #2457d6; --pass: #1a7f45; --warn: #a15c00; --fail: #c0302b;
+    --bg: #f6f7f9; --surface: #fff; --surface-2: #f0f2f5; --text: #1a1d23; --muted: #596273; --border: #dde1e8;
+    --accent: #2457d6; --pass: #1a7f45; --warn: #9a5800; --fail: #c0302b;
     --pass-bg: #e3f4ea; --warn-bg: #fdf0d9; --fail-bg: #fbe5e3;
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #101319; --surface: #181c24; --text: #e8eaee; --muted: #9099a8; --border: #2a303b;
-      --accent: #6c93f5; --pass: #4fc986; --warn: #e5a73e; --fail: #f2766f;
+      --bg: #101319; --surface: #181c24; --surface-2: #20252f; --text: #e8eaee; --muted: #9aa3b2; --border: #2a303b;
+      --accent: #7a9ef7; --pass: #4fc986; --warn: #e5a73e; --fail: #f2766f;
       --pass-bg: #14301f; --warn-bg: #36280d; --fail-bg: #3a1a18;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #101319; --surface: #181c24; --text: #e8eaee; --muted: #9099a8; --border: #2a303b;
-    --accent: #6c93f5; --pass: #4fc986; --warn: #e5a73e; --fail: #f2766f;
+    --bg: #101319; --surface: #181c24; --surface-2: #20252f; --text: #e8eaee; --muted: #9aa3b2; --border: #2a303b;
+    --accent: #7a9ef7; --pass: #4fc986; --warn: #e5a73e; --fail: #f2766f;
     --pass-bg: #14301f; --warn-bg: #36280d; --fail-bg: #3a1a18;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
     font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center;
-    padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
-  h1 { font-size: 17px; margin: 0; }
-  h1 small { color: var(--muted); font-weight: 400; margin-left: 8px; }
-  .stats { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-left: auto; }
-  .stat { display: flex; flex-direction: column; }
-  .stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  code { font: 12.5px ui-monospace, monospace; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+  button { font: inherit; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 var(--s4); }
+
+  /* banner + header */
+  #auth { display: none; background: var(--warn-bg); border-bottom: 1px solid var(--border); padding: var(--s3) 0; }
+  #auth .wrap { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); align-items: center; }
+  #auth input { flex: 1 1 220px; }
+  #auth .how { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: var(--s4) 0; }
+  header .wrap { display: flex; flex-wrap: wrap; gap: var(--s3) var(--s5); align-items: flex-start; }
+  .title { flex: 1 1 360px; }
+  h1 { font-size: 18px; margin: 0; display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+  .chip:empty { display: none; }
+  .chip { font-size: 12px; font-weight: 500; color: var(--muted); background: var(--surface-2); border-radius: 999px; padding: 1px 10px; }
+  .purpose { margin: var(--s1) 0 0; color: var(--muted); max-width: 62ch; }
+  .stats { display: flex; flex-wrap: wrap; gap: var(--s3) var(--s5); }
+  .stat { display: flex; flex-direction: column; min-width: 96px; }
+  .stat b { font-size: 18px; font-variant-numeric: tabular-nums; line-height: 1.3; }
   .stat span { font-size: 12px; color: var(--muted); }
-  main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; padding: 16px;
-    max-width: 1280px; margin: 0 auto; }
-  @media (max-width: 860px) { main { grid-template-columns: 1fr; } }
-  section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-  section h2 { font-size: 14px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-  .col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-  #log { min-height: 260px; max-height: 56vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-  .q { align-self: flex-end; background: var(--accent); color: #fff; padding: 8px 12px; border-radius: 12px 12px 2px 12px; max-width: 85%; }
-  .a { white-space: pre-wrap; }
-  .meta { font-size: 12px; color: var(--muted); margin-top: 6px; }
-  details.cite { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin-top: 6px; font-size: 13px; }
-  details.cite summary { cursor: pointer; color: var(--muted); }
-  details.cite pre { white-space: pre-wrap; margin: 8px 0 0; font: 12px/1.5 ui-monospace, monospace; }
-  form { display: flex; gap: 8px; margin-top: 12px; }
+  .stat small { font-size: 11px; color: var(--muted); }
+
+  /* status cards */
+  .status { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); margin: var(--s4) 0; }
+  @media (max-width: 760px) { .status { grid-template-columns: 1fr; } }
+  .card { display: flex; gap: var(--s3); align-items: flex-start; text-decoration: none; color: inherit;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: var(--s3) var(--s4); }
+  .card:hover { border-color: var(--accent); }
+  .ico { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800;
+    background: var(--surface-2); color: var(--muted); }
+  .ok .ico { background: var(--pass-bg); color: var(--pass); }
+  .bad .ico { background: var(--fail-bg); color: var(--fail); }
+  .warn .ico { background: var(--warn-bg); color: var(--warn); }
+  .card h2 { margin: 0; font-size: 14px; }
+  .card p { margin: 0; font-size: 13px; color: var(--muted); }
+  .card .verdict { font-weight: 600; font-size: 14px; color: var(--text); }
+
+  /* layout */
+  main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--s4);
+    grid-template-areas: "chat ready" "chat iso"; padding-bottom: var(--s5); align-items: start; }
+  @media (max-width: 860px) { main { grid-template-columns: 1fr; grid-template-areas: "ready" "iso" "chat"; } }
+  #sec-ready { grid-area: ready; } #sec-iso { grid-area: iso; } #sec-chat { grid-area: chat; }
+  section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: var(--s4); scroll-margin-top: var(--s4); }
+  section > h2 { font-size: 15px; margin: 0; display: flex; align-items: center; gap: var(--s2); }
+  .step { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px;
+    display: grid; place-items: center; }
+  .sub { margin: var(--s1) 0 var(--s3); font-size: 13px; color: var(--muted); }
+  h3 { margin: var(--s4) 0 var(--s1); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+
+  /* buttons + inputs */
+  .btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn.small { padding: 4px 10px; font-size: 13px; }
+  .btn:disabled { opacity: .55; cursor: default; }
   input[type=text], input[type=password] { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 8px;
     border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
-  button { padding: 9px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent);
-    color: #fff; font: inherit; cursor: pointer; }
-  button.ghost { background: transparent; color: var(--accent); }
-  button:disabled { opacity: .55; cursor: default; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .chips button { font-size: 12px; padding: 4px 10px; }
+
+  /* tables */
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  td { padding: 6px 4px; border-top: 1px solid var(--border); vertical-align: top; }
-  .badge { display: inline-block; min-width: 42px; text-align: center; font-size: 11px; font-weight: 700;
-    padding: 2px 6px; border-radius: 6px; }
+  td { padding: 7px 4px; border-top: 1px solid var(--border); vertical-align: top; }
+  td:first-child { width: 92px; white-space: nowrap; }
+  .badge { display: inline-block; white-space: nowrap; min-width: 54px; text-align: center; font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; }
   .pass { color: var(--pass); background: var(--pass-bg); }
-  .warn { color: var(--warn); background: var(--warn-bg); }
+  .warnb { color: var(--warn); background: var(--warn-bg); }
   .fail { color: var(--fail); background: var(--fail-bg); }
-  .fix { color: var(--muted); font-size: 12px; }
-  .verdict { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); }
-  .dot.pass { background: var(--pass); } .dot.fail { background: var(--fail); }
-  .empty { color: var(--muted); }
-  #auth { display: none; gap: 8px; padding: 8px 16px; background: var(--warn-bg); }
+  .meaning { color: var(--muted); font-size: 12px; }
+  .fixhint { margin-top: 2px; font-size: 12px; color: var(--text); }
+  .summary { font-size: 13px; margin: var(--s2) 0; font-weight: 600; }
+
+  /* chat */
+  #log { min-height: 280px; max-height: 58vh; overflow-y: auto; display: flex; flex-direction: column; gap: var(--s4); padding-right: 2px; }
+  .welcome h3 { margin-top: 0; }
+  .examples { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--s2); margin-top: var(--s3); }
+  .example { text-align: left; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: var(--s3);
+    color: var(--text); font-size: 13px; }
+  .example:hover { border-color: var(--accent); }
+  .example small { display: block; color: var(--muted); margin-top: 2px; }
+  .q { align-self: flex-end; background: var(--accent); color: #fff; padding: 8px 12px; border-radius: 12px 12px 2px 12px; max-width: 85%; }
+  .a { white-space: pre-wrap; }
+  .meta { font-size: 12px; color: var(--muted); margin-top: var(--s2); display: flex; flex-wrap: wrap; gap: var(--s1) var(--s3); align-items: center; }
+  .gate { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; }
+  .srcs { margin-top: var(--s2); font-size: 12px; color: var(--muted); }
+  details.cite { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin-top: 6px; font-size: 13px; }
+  details.cite summary { cursor: pointer; }
+  details.cite pre { white-space: pre-wrap; margin: 8px 0 0; font: 12px/1.5 ui-monospace, monospace; }
+  .err { color: var(--fail); font-weight: 600; }
+  form.ask { display: flex; gap: var(--s2); margin-top: var(--s3); }
+  .spin { width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation: none; border-top-color: var(--border); } }
+
+  /* help dialog */
+  dialog { max-width: 640px; width: calc(100% - 2 * var(--s4)); border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); padding: var(--s5); }
+  dialog::backdrop { background: rgba(0, 0, 0, .5); }
+  dialog h2 { margin-top: 0; }
+  dl { margin: 0; } dt { font-weight: 600; margin-top: var(--s3); } dd { margin: 0; color: var(--muted); font-size: 14px; }
 </style>
 </head>
 <body>
-<div id="auth"><span>API key required:</span><input type="password" id="key" aria-label="API key" placeholder="X-API-Key"><button id="savekey">Save</button></div>
+<div id="auth" role="alert">
+  <div class="wrap">
+    <strong>This console is protected by an API key.</strong>
+    <input type="password" id="key" aria-label="API key" placeholder="Paste API key">
+    <button class="btn" id="savekey">Unlock</button>
+    <div class="how">Get the key from the cluster: <code id="keycmd">kubectl -n airgap get secret airgap-agent -o jsonpath='{.data.api-key}' | base64 -d</code>
+      <button class="btn ghost small" id="copycmd" type="button">Copy command</button></div>
+  </div>
+</div>
+
 <header>
-  <h1>Air-Gap Console<small id="model"></small></h1>
-  <div class="stats" aria-live="polite">
-    <div class="stat"><b id="s-cold">—</b><span>cold start to 1st answer</span></div>
-    <div class="stat"><b id="s-tps">—</b><span>tokens / sec</span></div>
-    <div class="stat"><b id="s-lat">—</b><span>last answer latency</span></div>
-    <div class="stat"><b id="s-steps">—</b><span>install steps</span></div>
+  <div class="wrap">
+    <div class="title">
+      <h1>Air-Gap Console <span class="chip" id="model" title="The local language model that writes answers"></span></h1>
+      <p class="purpose">An AI assistant that runs entirely inside this cluster and answers from your own documents. Nothing leaves the network.
+        <button class="btn ghost small" id="openhelp" type="button">What is this?</button></p>
+    </div>
+    <div class="stats" aria-live="polite">
+      <div class="stat" title="Time from the pod starting to its first answered question">
+        <b id="s-cold">—</b><span>Time to first answer</span></div>
+      <div class="stat" title="Tokens are word fragments; one token is roughly three-quarters of a word">
+        <b id="s-tps">—</b><span>Answer speed (tokens/sec)</span><small id="s-words"></small></div>
+      <div class="stat"><b id="s-lat">—</b><span>Last answer took</span></div>
+      <div class="stat" title="Customer steps to install: run preflight, load the bundle, install the chart">
+        <b id="s-steps">—</b><span>Setup steps</span></div>
+    </div>
   </div>
 </header>
-<main>
-  <div class="col">
-    <section aria-labelledby="chat-h">
-      <h2 id="chat-h">Ask your local docs</h2>
-      <div id="log"><div class="empty">Answers come from a model running inside this cluster, grounded in the indexed docs. Nothing leaves the network.</div></div>
-      <form id="ask"><input type="text" id="q" aria-label="Question" placeholder="e.g. How do I run the preflight checker?" autocomplete="off" required><button id="send">Ask</button></form>
-      <div class="chips" id="chips"></div>
-    </section>
+
+<div class="wrap">
+  <div class="status" aria-live="polite" aria-label="Overall status">
+    <a class="card" id="c-iso" href="#sec-iso"><span class="ico" aria-hidden="true">…</span><div>
+      <h2>Isolated</h2><div class="verdict">Checking…</div><p>Can the cluster reach the internet?</p></div></a>
+    <a class="card" id="c-ready" href="#sec-ready"><span class="ico" aria-hidden="true">…</span><div>
+      <h2>Ready</h2><div class="verdict">Checking…</div><p>Are the model and your documents loaded?</p></div></a>
+    <a class="card" id="c-health" href="#sec-ready"><span class="ico" aria-hidden="true">…</span><div>
+      <h2>Healthy</h2><div class="verdict">Checking…</div><p>Do the environment checks pass?</p></div></a>
   </div>
-  <div class="col">
-    <section aria-labelledby="pf-h">
-      <h2 id="pf-h">Preflight</h2>
-      <button class="ghost" id="runpf">Run checks</button>
+
+  <main>
+    <section id="sec-ready" aria-labelledby="h-ready">
+      <h2 id="h-ready"><span class="step" aria-hidden="true">1</span>Readiness checks</h2>
+      <p class="sub">Is everything this assistant needs installed and running? Anything not passing shows how to fix it.</p>
+      <button class="btn ghost small" id="runpf">Run checks again</button>
+      <div class="summary" id="pfsum"></div>
       <table id="pf"><tbody></tbody></table>
     </section>
-    <section aria-labelledby="ag-h">
-      <h2 id="ag-h">Air-gap proof</h2>
-      <div class="verdict"><span class="dot" id="agdot"></span><span id="agtxt">Not checked</span></div>
+
+    <section id="sec-iso" aria-labelledby="h-iso">
+      <h2 id="h-iso"><span class="step" aria-hidden="true">2</span>Isolation proof</h2>
+      <p class="sub">From inside the cluster we try to reach public internet addresses. <strong>Every attempt should fail.</strong></p>
       <table id="probes"><tbody></tbody></table>
-      <h2 style="margin-top:14px">NetworkPolicies</h2>
+      <h3>Rules enforcing this (NetworkPolicies)</h3>
       <table id="np"><tbody></tbody></table>
-      <button class="ghost" id="runag" style="margin-top:10px">Re-probe</button>
+      <button class="btn ghost small" id="runag" style="margin-top:12px">Test again</button>
     </section>
-  </div>
-</main>
+
+    <section id="sec-chat" aria-labelledby="h-chat">
+      <h2 id="h-chat"><span class="step" aria-hidden="true">3</span>Ask your documents</h2>
+      <p class="sub">Answers come only from the documents indexed in this cluster, and every answer lists the passages it used.</p>
+      <div id="log">
+        <div class="welcome" id="welcome">
+          <h3>Try a question</h3>
+          <div class="examples" id="examples"></div>
+        </div>
+      </div>
+      <form class="ask" id="ask"><input type="text" id="q" aria-label="Your question" placeholder="Ask something about the indexed documents…" autocomplete="off" required><button class="btn" id="send">Ask</button></form>
+    </section>
+  </main>
+</div>
+
+<dialog id="help" aria-labelledby="help-h">
+  <h2 id="help-h">What is this?</h2>
+  <p>This console shows an LLM assistant that was installed into a locked-down Kubernetes cluster with <strong>no internet access</strong>. It searches your documents and uses a small language model running in the same cluster to answer, so no data leaves your network.</p>
+  <p><strong>1 Readiness</strong> checks the setup, <strong>2 Isolation</strong> proves the cluster really is offline, and <strong>3 Ask</strong> lets you try it.</p>
+  <dl>
+    <dt>Air-gap</dt><dd>A network with no connection to the public internet.</dd>
+    <dt>Preflight / readiness check</dt><dd>Tests that run before and after install to find what the environment is missing.</dd>
+    <dt>NetworkPolicy</dt><dd>A Kubernetes rule that limits which pods can talk to which. Here the default is "deny everything", with a few explicit exceptions.</dd>
+    <dt>Token</dt><dd>A word fragment the model reads and writes. Answer speed is measured in tokens per second.</dd>
+    <dt>Sources / citations</dt><dd>The document passages the answer was based on, so you can verify it.</dd>
+    <dt>Safety check (query gate)</dt><dd>Optional step that refuses off-topic questions and prompt-injection attempts before the model runs.</dd>
+  </dl>
+  <form method="dialog" style="margin-top:16px"><button class="btn">Close</button></form>
+</dialog>
+
 <script>
 const $ = (id) => document.getElementById(id);
 let apiKey = "";
 try { apiKey = sessionStorage.getItem("apikey") || ""; } catch (e) {}
+let pf = null, ag = null;
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
+const CHECKS = {
+  "egress-blocked": ["Internet is blocked", "The agent cannot reach the public internet."],
+  "ollama": ["Model server is running", "The local AI model service is responding.", "the model server isn't responding"],
+  "model-generation": ["Answer model is installed", "The model that writes answers is available offline.", "the answer model is missing"],
+  "model-embedding": ["Search model is installed", "The model that finds relevant passages is available offline.", "the search model is missing"],
+  "vector-db": ["Documents are indexed", "Your documents are loaded into the search database.", "no documents are indexed yet"],
+  "cpu": ["Processor cores", "Enough CPU for local inference (4 or more recommended)."],
+  "memory": ["Memory", "Enough RAM to hold the model (8 GiB or more recommended)."],
+  "disk": ["Free disk space", "Room for models and data (10 GB or more recommended)."],
+};
+const PROBES = { "1.1.1.1:443": "Cloudflare (1.1.1.1)", "8.8.8.8:53": "Google DNS (8.8.8.8)", "example.com:443": "example.com" };
+const POLICIES = {
+  "default-deny": "Blocks all traffic by default",
+  "allow-dns": "Lets the agent look up names through cluster DNS only",
+  "client-egress": "Lets the agent reach only the model server and the database",
+  "backends-ingress": "Only the agent may connect to the model server and database",
+  "agent-ingress": "Lets the console and metrics reach the agent",
+};
+const EXAMPLES = [
+  ["How do I run the preflight checker?", "Finds what an environment is missing"],
+  ["What does the default-deny egress policy allow?", "Explains the network rules"],
+  ["How do I load the offline bundle?", "The air-gapped install step"],
+  ["What is the capital of France?", "Off-topic: not in the documents"],
+];
+const GATES = {
+  in_scope: ["pass", "Safety check: on topic"],
+  out_of_scope: ["warnb", "Safety check: off topic, not answered"],
+  injection: ["fail", "Safety check: looks like a prompt-injection attempt, blocked"],
+};
+
 async function api(path, opts = {}) {
   const r = await fetch(path, { ...opts, headers: { ...(opts.headers || {}), "X-API-Key": apiKey } });
-  if (r.status === 401) { $("auth").style.display = "flex"; throw new Error("unauthorized"); }
+  if (r.status === 401) {
+    $("auth").style.display = "block";
+    for (const id of ["c-iso", "c-ready", "c-health"]) setCard(id, "warn", "!", "Locked: enter the API key above");
+    throw new Error("unauthorized");
+  }
   return r;
 }
+
+function setCard(id, state, icon, verdict) {
+  const c = $(id);
+  c.className = "card " + state;
+  c.querySelector(".ico").textContent = icon;
+  c.querySelector(".verdict").textContent = verdict;
+}
+
+function renderStatus() {
+  if (ag) {
+    const e = ag.egress;
+    if (e.airgapped) setCard("c-iso", "ok", "✓", "Offline: no internet access");
+    else setCard("c-iso", "bad", "✕", "Leak: can reach " + e.leaked.join(", "));
+  }
+  if (pf) {
+    const by = Object.fromEntries(pf.map((r) => [r.id, r]));
+    const need = ["ollama", "model-generation", "model-embedding", "vector-db"].map((k) => by[k]).filter(Boolean);
+    const bad = need.find((r) => r.status === "fail"), thin = need.find((r) => r.status === "warn");
+    const problem = (r) => (CHECKS[r.id] || [])[2] || r.name.toLowerCase() + " needs attention";
+    if (bad) setCard("c-ready", "bad", "✕", "Not ready: " + problem(bad));
+    else if (thin) setCard("c-ready", "warn", "!", "Almost ready: " + problem(thin));
+    else setCard("c-ready", "ok", "✓", "Model and documents loaded");
+    const pass = pf.filter((r) => r.status === "pass").length;
+    const state = pf.some((r) => r.status === "fail") ? "bad" : pass === pf.length ? "ok" : "warn";
+    setCard("c-health", state, state === "ok" ? "✓" : state === "bad" ? "✕" : "!", `${pass} of ${pf.length} checks passed`);
+  }
+}
+
+function row(cells) { return "<tr>" + cells.map((c) => `<td>${c}</td>`).join("") + "</tr>"; }
 
 async function loadMeta() {
   try {
     const m = await (await api("/api/meta")).json();
     $("model").textContent = m.model;
     $("s-cold").textContent = m.cold_start_s == null ? "—" : m.cold_start_s + " s";
-    $("s-tps").textContent = m.tokens_per_s ? m.tokens_per_s : "—";
+    $("s-tps").textContent = m.tokens_per_s || "—";
+    $("s-words").textContent = m.tokens_per_s ? `≈ ${(m.tokens_per_s * 0.75).toFixed(1)} words/sec` : "ask a question to measure";
     $("s-lat").textContent = m.last_latency_s ? m.last_latency_s + " s" : "—";
     $("s-steps").textContent = m.install_steps;
   } catch (e) {}
 }
 
-function row(cells) { return "<tr>" + cells.map((c) => `<td>${c}</td>`).join("") + "</tr>"; }
-
 async function runPreflight() {
   $("runpf").disabled = true;
   try {
-    const res = await (await api("/api/preflight")).json();
-    $("pf").tBodies[0].innerHTML = res.map((r) =>
-      row([`<span class="badge ${r.status}">${r.status.toUpperCase()}</span>`,
-        `<div>${esc(r.name)}</div><div class="fix">${esc(r.detail)}${r.status !== "pass" && r.fix ? " — " + esc(r.fix) : ""}</div>`])).join("");
+    pf = await (await api("/api/preflight")).json();
+    const order = { fail: 0, warn: 1, pass: 2 };
+    const rows = [...pf].sort((a, b) => order[a.status] - order[b.status]);
+    $("pfsum").textContent = `${pf.filter((r) => r.status === "pass").length} of ${pf.length} checks passed`;
+    $("pf").tBodies[0].innerHTML = rows.map((r) => {
+      const [title, meaning] = CHECKS[r.id] || [r.name, ""];
+      const cls = r.status === "warn" ? "warnb" : r.status;
+      const label = { pass: "✓ Pass", warn: "! Warning", fail: "✕ Fail" }[r.status];
+      return row([`<span class="badge ${cls}">${label}</span>`,
+        `<div>${esc(title)}</div><div class="meaning">${esc(meaning)}${meaning ? " " : ""}Now: ${esc(r.detail.charAt(0).toLowerCase() + r.detail.slice(1))}.</div>` +
+        (r.status !== "pass" && r.fix ? `<div class="fixhint"><strong>Fix:</strong> ${esc(r.fix)}</div>` : "")]);
+    }).join("");
+    renderStatus();
   } catch (e) {} finally { $("runpf").disabled = false; }
 }
 
 async function runAirgap() {
-  $("runag").disabled = true; $("agtxt").textContent = "Probing…";
+  $("runag").disabled = true;
   try {
-    const d = await (await api("/api/airgap")).json();
-    const ok = d.egress.airgapped;
-    $("agdot").className = "dot " + (ok ? "pass" : "fail");
-    $("agtxt").textContent = ok ? "Egress blocked — no outbound internet" : "LEAK: outbound traffic is possible";
-    $("probes").tBodies[0].innerHTML = d.egress.probes.map((p) =>
-      row([`<code>${esc(p.target)}</code>`,
-        `<span class="badge ${p.reachable ? "fail" : "pass"}">${p.reachable ? "REACHED" : "BLOCKED"}</span>`,
-        `<span class="fix">${esc(p.reason || p.ms + " ms")}</span>`])).join("");
-    const np = d.network_policies;
+    ag = await (await api("/api/airgap")).json();
+    $("probes").tBodies[0].innerHTML = ag.egress.probes.map((p) =>
+      row([`<span class="badge ${p.reachable ? "fail" : "pass"}">${p.reachable ? "✕ Reached" : "✓ Blocked"}</span>`,
+        `<div>${esc(PROBES[p.target] || p.target)}</div><div class="meaning">${p.reachable ? "Leak: the internet is reachable from here." : "Good: connection failed as it should."}</div>`])).join("");
+    const np = ag.network_policies;
     $("np").tBodies[0].innerHTML = np.available
-      ? (np.policies.map((p) => row([`<code>${esc(p.name)}</code>`, esc(p.types.join("+")), `<span class="fix">${p.egress_rules} egress rule(s)</span>`])).join("") || row(["<span class='fix'>none found</span>"]))
-      : row([`<span class="fix">${esc(np.reason)}</span>`]);
+      ? (np.policies.map((p) => {
+          const key = Object.keys(POLICIES).find((k) => p.name.endsWith(k));
+          return row([`<code>${esc(key || p.name)}</code>`, `<div>${esc(POLICIES[key] || p.types.join(" + "))}</div>`]);
+        }).join("") || row(["", "<span class='meaning'>No policies found. Without them only the node-level block isolates the cluster.</span>"]))
+      : row(["", `<span class="meaning">Policy list unavailable here: ${esc(np.reason)}</span>`]);
+    renderStatus();
   } catch (e) {} finally { $("runag").disabled = false; }
+}
+
+function friendlyError(raw) {
+  return `<span class="err">Couldn't answer.</span> The model server or document database may not be responding. Check the readiness checks (step 1).` +
+    `<details><summary>Technical details</summary><pre>${esc(raw)}</pre></details>`;
 }
 
 async function ask(question) {
   const log = $("log");
-  if (log.querySelector(".empty")) log.innerHTML = "";
+  if ($("welcome")) $("welcome").remove();
   log.insertAdjacentHTML("beforeend", `<div class="q">${esc(question)}</div>`);
   const box = document.createElement("div");
-  box.innerHTML = `<div class="a"></div><div class="cites"></div><div class="meta">retrieving…</div>`;
+  box.innerHTML = `<div class="a"></div><div class="srcs"></div><div class="meta"><span class="spin" aria-hidden="true"></span><span class="status-text">Searching documents…</span></div>`;
   log.appendChild(box);
-  const a = box.querySelector(".a"), cites = box.querySelector(".cites"), meta = box.querySelector(".meta");
+  const a = box.querySelector(".a"), srcs = box.querySelector(".srcs"), meta = box.querySelector(".meta");
+  const stage = (t) => { const el = meta.querySelector(".status-text"); if (el) el.textContent = t; };
   $("send").disabled = true;
+  let gateHtml = "";
   try {
     const r = await api("/api/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question }) });
     const reader = r.body.getReader(), dec = new TextDecoder();
-    let buf = "", gate = "";
+    let buf = "";
     for (;;) {
       const { value, done } = await reader.read();
       if (done) break;
@@ -185,32 +369,42 @@ async function ask(question) {
         if (!line) continue;
         const ev = JSON.parse(line);
         if (ev.type === "citations") {
-          meta.textContent = "generating…";
-          cites.innerHTML = ev.citations.map((c) =>
-            `<details class="cite"><summary>[${c.n}] ${esc(c.source)} · score ${c.score.toFixed(2)}</summary><pre>${esc(c.text)}</pre></details>`).join("");
+          stage("Writing answer…");
+          srcs.innerHTML = `Sources used (click to read the passage)` + ev.citations.map((c) =>
+            `<details class="cite"><summary>[${c.n}] ${esc(c.source)} · relevance ${c.score.toFixed(2)}</summary><pre>${esc(c.text)}</pre></details>`).join("");
         } else if (ev.type === "gate") {
-          gate = ` · gate: ${ev.verdict} (${ev.confidence}, ${ev.mode}, ${ev.ms} ms)${ev.error ? " [classifier error — failed open]" : ""}`;
-          meta.textContent = "gate: " + ev.verdict + "…";
+          const [cls, text] = GATES[ev.verdict] || ["pass", "Safety check: " + ev.verdict];
+          gateHtml = `<span class="gate ${cls}" title="confidence ${ev.confidence}, mode ${esc(ev.mode)}, ${ev.ms} ms">${esc(text)}</span>` +
+            (ev.error ? `<span class="meaning">(classifier error, answered anyway)</span>` : "");
         } else if (ev.type === "token") { a.textContent += ev.text; }
-        else if (ev.type === "done") { meta.textContent = (ev.gated ? "blocked before generation · " : `${ev.tokens} tokens · ${ev.tokens_per_s} tok/s · `) + `${ev.latency_s}s` + gate; }
-        else if (ev.type === "error") { meta.textContent = "error: " + ev.message; }
+        else if (ev.type === "done") {
+          const speed = ev.gated ? "Stopped before the model ran" : `${ev.tokens} tokens at ${ev.tokens_per_s} tokens/sec`;
+          meta.innerHTML = `<span>Answered in ${ev.latency_s} s · ${speed}</span>${gateHtml}`;
+          if (ev.gated) srcs.innerHTML = "";
+        } else if (ev.type === "error") { meta.innerHTML = friendlyError(ev.message); }
         log.scrollTop = log.scrollHeight;
       }
     }
-  } catch (e) { meta.textContent = "request failed: " + e.message; }
-  finally { $("send").disabled = false; loadMeta(); }
+  } catch (e) {
+    meta.innerHTML = e.message === "unauthorized" ? `<span class="err">Enter the API key above to continue.</span>` : friendlyError(e.message);
+  } finally { $("send").disabled = false; loadMeta(); }
 }
 
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.trim(); if (q) { $("q").value = ""; ask(q); } });
 $("runpf").addEventListener("click", runPreflight);
 $("runag").addEventListener("click", runAirgap);
+$("openhelp").addEventListener("click", () => $("help").showModal());
 $("savekey").addEventListener("click", () => {
-  apiKey = $("key").value; try { sessionStorage.setItem("apikey", apiKey); } catch (e) {}
+  apiKey = $("key").value.trim(); try { sessionStorage.setItem("apikey", apiKey); } catch (e) {}
   $("auth").style.display = "none"; loadMeta(); runPreflight(); runAirgap();
 });
-for (const s of ["How do I run the preflight checker?", "What does the default-deny egress policy allow?", "How do I load the offline bundle?", "What is the capital of France?"]) {
-  const b = document.createElement("button"); b.className = "ghost"; b.type = "button"; b.textContent = s;
-  b.onclick = () => ask(s); $("chips").appendChild(b);
+$("copycmd").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("keycmd").textContent); $("copycmd").textContent = "Copied"; } catch (e) { $("copycmd").textContent = "Select the command and copy"; }
+});
+for (const [q, hint] of EXAMPLES) {
+  const b = document.createElement("button"); b.type = "button"; b.className = "example";
+  b.innerHTML = `${esc(q)}<small>${esc(hint)}</small>`;
+  b.onclick = () => ask(q); $("examples").appendChild(b);
 }
 loadMeta(); runPreflight(); runAirgap();
 </script>
