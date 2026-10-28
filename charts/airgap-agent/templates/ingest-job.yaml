@@ -3,7 +3,9 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ .Release.Name }}-ingest-{{ .Release.Revision }}
-  labels: {{- include "airgap.labels" . | nindent 4 }}
+  labels:
+    {{- include "airgap.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingest
 spec:
   backoffLimit: 20          # the model server may still be starting
   ttlSecondsAfterFinished: 3600

@@ -26,7 +26,9 @@ log "pulling $QDRANT_IMAGE"
 docker pull "$QDRANT_IMAGE"
 
 log "exporting images"
-docker save "$AGENT_IMAGE" "$MODELS_IMAGE" "$QDRANT_IMAGE" -o "$P/images.tar"
+# Single platform: with Docker's containerd image store a multi-platform save cannot be imported by the cluster ("content digest ... not found").
+case "$(uname -m)" in aarch64|arm64) PLATFORM="${PLATFORM:-linux/arm64}" ;; *) PLATFORM="${PLATFORM:-linux/amd64}" ;; esac
+docker save --platform "$PLATFORM" "$AGENT_IMAGE" "$MODELS_IMAGE" "$QDRANT_IMAGE" -o "$P/images.tar"
 
 log "packaging chart and scripts"
 helm package "$ROOT/charts/airgap-agent" --version "$VERSION" --app-version "$VERSION" -d "$P" >/dev/null
