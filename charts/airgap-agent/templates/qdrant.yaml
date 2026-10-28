@@ -21,7 +21,11 @@ spec:
           readinessProbe: { httpGet: { path: /readyz, port: http }, periodSeconds: 5 }
           securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
           resources: {{- toYaml .Values.qdrant.resources | nindent 12 }}
-          volumeMounts: [{ name: data, mountPath: /qdrant/storage }]
+          volumeMounts:
+            - { name: data, mountPath: /qdrant/storage }
+            - { name: snapshots, mountPath: /qdrant/snapshots }   # image dir is root-owned; Qdrant panics at startup if it cannot create snapshots/tmp
+      volumes:
+        - { name: snapshots, emptyDir: {} }
   volumeClaimTemplates:
     - metadata: { name: data }
       spec:
